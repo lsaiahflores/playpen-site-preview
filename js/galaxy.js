@@ -222,9 +222,6 @@
     if (reduce || instant) { rot = to; tween = null; return; }
     tween = { from: from, to: to, t0: performance.now(), dur: 900 };
   }
-  function nearestTo(abs0) {      // shortest way round to station index i, from the current front
-    return abs0;
-  }
   function stepBy(d) { userTouched = true; capBox.setAttribute('aria-live', 'polite'); goTo(frontAbs + d); }
   function jumpToIndex(i) {
     userTouched = true; capBox.setAttribute('aria-live', 'polite');
@@ -236,7 +233,7 @@
   /* ---- layout + drawing */
   function resize() {
     var r = stage.getBoundingClientRect();
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(1.5, window.devicePixelRatio || 1);
     W = Math.max(280, Math.round(r.width)); H = Math.max(240, Math.round(r.height));
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     stars = null;
@@ -251,7 +248,12 @@
     }
   }
 
+  var lastPaint = 0, onScreen = true;
   function frame(now) {
+    // ~30 frames a second is plenty for slow-turning bodies, and it keeps the main thread quiet; turning gets the full rate
+    if (!drag && !tween && now - lastPaint < 28) { requestAnimationFrame(frame); return; }
+    lastPaint = now;
+    if (!onScreen) { idle = true; return; }
     if (tween) {
       var p = Math.min(1, (now - tween.t0) / tween.dur);
       rot = tween.from + (tween.to - tween.from) * ease(p);
@@ -263,6 +265,9 @@
   }
   var idle = false;
   function kick() { if (idle) { idle = false; requestAnimationFrame(frame); } }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) { onScreen = es[0].isIntersecting; if (onScreen) { lastAuto = performance.now(); kick(); } }, { threshold: 0.05 }).observe(stage);
+  }
 
   function draw(now) {
     if (!stars) makeStars();
@@ -279,7 +284,6 @@
 
     var list = [];
     for (var i = 0; i < N; i++) {
-      var a = rot + (i + (frontAbs - frontIdx()) ) * step;   // angle of station i
       // station i's index relative to the front (-N/2..N/2)
       var rel = i - frontIdx(); if (rel > N / 2) rel -= N; if (rel < -N / 2) rel += N;
       var ang = rot + (frontAbs + rel) * step;

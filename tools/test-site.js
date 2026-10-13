@@ -366,6 +366,13 @@ async function browserTests() {
     await pg.go(base + '/play/maze/', { width: 390, height: 844, mobile: true });
     t('play placeholder: a canvas, touch buttons, and a clear "Placeholder" banner', await pg.ev(`return !!document.getElementById('game') && document.querySelectorAll('.dpad button').length===4 && /Placeholder/.test(document.querySelector('.game-banner').textContent);`) === true);
 
+    /* ---------- download button against the REAL releases API */
+    await pg.go(base + '/download/', { width: 1280, height: 900 });
+    await sleep(1500);
+    const real = await pg.ev(`return { href: document.getElementById('dl-button').href, ver: document.getElementById('dl-version').textContent, size: document.getElementById('dl-size').textContent, sha: document.getElementById('dl-sha').textContent, file: document.getElementById('dl-file').textContent };`);
+    t('download (real GitHub API): button points at the released installer', /^https:\/\/github\.com\/lsaiahflores\/playpen-releases\/releases\/download\/v[\d.]+\/Playpen-Setup-[\d.]+\.exe$/.test(real.href), real);
+    t('download (real GitHub API): version, size in MB and a 64-character SHA-256 are shown', /^[\d.]+$/.test(real.ver) && /^\d+ MB$/.test(real.size) && /^[0-9a-f]{64}$/.test(real.sha), real);
+
     /* ---------- download button: mocked release, then a failed lookup */
     await pg.send('Fetch.enable', { patterns: [{ urlPattern: 'https://api.github.com/*' }] });
     const fakeRelease = { tag_name: 'v9.9.9', name: 'Playpen 9.9.9', body: 'Windows installer.\nSHA-256: ' + 'ab'.repeat(32), assets: [{ name: 'Playpen-Setup-9.9.9.exe', size: 123456789, browser_download_url: 'https://github.com/x/y/releases/download/v9.9.9/Playpen-Setup-9.9.9.exe' }] };

@@ -28,6 +28,8 @@ function layout({ file, title, description, body, depth, nav = '', noindex = fal
 ${noindex ? '<meta name="robots" content="noindex, nofollow">\n' : ''}<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://*.supabase.co https://api.github.com; base-uri 'self'; form-action 'self'; object-src 'none'">
 <link rel="canonical" href="${url}">
 <link rel="icon" type="image/svg+xml" href="${b}img/favicon.svg">
+<link rel="preload" href="${b}fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="${b}fonts/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="${b}css/site.css">
 ${og ? `<meta property="og:type" content="website">
 <meta property="og:site_name" content="Playpen">
